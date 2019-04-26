@@ -6,7 +6,7 @@ with open('README.md') as file:
 
 name = 'shucks'
 
-version = '0.0.1'
+version = '0.0.2'
 
 author = 'Exahilosys'
 
@@ -16,7 +16,6 @@ setuptools.setup(
     name = name,
     version = version,
     author = author,
-    author_email = 'exahilosys@gmail.com',
     url = url,
     packages = setuptools.find_packages(),
     license = 'MIT',
@@ -24,6 +23,9 @@ setuptools.setup(
     long_description = readme,
     long_description_content_type = 'text/markdown',
     include_package_data = True,
+    py_modules = [
+        name
+    ],
     classifiers = [
         'License :: OSI Approved :: MIT License',
         'Intended Audience :: Developers',

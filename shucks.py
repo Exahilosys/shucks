@@ -140,6 +140,8 @@ def c_array(schema, data, **extra):
 
         if schema is ...:
 
+            length -= 1
+
             (schema, single) = (cache, False)
 
         if schema is __marker:

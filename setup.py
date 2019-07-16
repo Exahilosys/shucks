@@ -6,7 +6,7 @@ with open('README.md') as file:
 
 name = 'shucks'
 
-version = '0.0.3'
+version = '0.1.0'
 
 author = 'Exahilosys'
 
@@ -21,19 +21,5 @@ setuptools.setup(
     license = 'MIT',
     description = 'Mini schema validator.',
     long_description = readme,
-    long_description_content_type = 'text/markdown',
-    include_package_data = True,
-    py_modules = [
-        name
-    ],
-    classifiers = [
-        'License :: OSI Approved :: MIT License',
-        'Intended Audience :: Developers',
-        'Natural Language :: English',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python :: 3.7',
-        'Topic :: Software Development :: Libraries',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-        'Topic :: Utilities',
-    ]
+    long_description_content_type = 'text/markdown'
 )

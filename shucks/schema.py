@@ -1,10 +1,8 @@
 import functools
 import collections.abc
-import numbers
-import types
 
 
-__all__ = ()
+__all__ = ('Error', 'Op', 'Nex', 'And', 'Sig', 'Opt', 'Con', 'check', 'Or')
 
 
 class Error(Exception):
@@ -52,7 +50,7 @@ class Op(tuple):
         return f'{self.__class__.__name__}({info})'
 
 
-class Or(Op):
+class Nex(Op):
 
     __slots__ = ()
 
@@ -62,7 +60,7 @@ class And(Op):
     __slots__ = ()
 
 
-class Opt:
+class Sig:
 
     __slots__ = ('value',)
 
@@ -75,16 +73,32 @@ class Opt:
         return f'{self.__class__.__name__}({self.value})'
 
 
+class Opt(Sig):
+
+    __slots__ = ()
+
+
+class Con(Sig):
+
+    __slots__ = ('change',)
+
+    def __init__(self, change, *args):
+
+        super().__init__(*args)
+
+        self.change = change
+
+
 __marker = object()
 
 
-def c_or(schema, data, **extra):
+def _c_nex(figure, data, **extra):
 
-    for schema in schema:
+    for figure in figure:
 
         try:
 
-            validate(schema, data, **extra)
+            check(figure, data, **extra)
 
         except Error as _error:
 
@@ -99,34 +113,34 @@ def c_or(schema, data, **extra):
         raise error
 
 
-def c_and(schema, data, **extra):
+def _c_and(figure, data, **extra):
 
-    for schema in schema:
+    for figure in figure:
 
-        validate(schema, data, **extra)
+        check(figure, data, **extra)
 
 
-def c_type(schema, data):
+def _c_type(figure, data):
 
     cls = type(data)
 
-    if not issubclass(cls, schema):
+    if not issubclass(cls, figure):
 
-        raise Error('type', schema, cls)
+        raise Error('type', figure, cls)
 
 
-def c_object(schema, data):
+def _c_object(figure, data):
 
-    if schema == data:
+    if figure == data:
 
         return
 
-    raise Error('object', schema, data)
+    raise Error('object', figure, data)
 
 
-def c_array(schema, data, **extra):
+def _c_array(figure, data, **extra):
 
-    length = len(schema)
+    length = len(figure)
 
     generate = iter(data)
 
@@ -136,17 +150,17 @@ def c_array(schema, data, **extra):
 
     index = 0
 
-    for schema in schema:
+    for figure in figure:
 
-        if schema is ...:
+        if figure is ...:
 
             length -= 1
 
-            (schema, single) = (cache, False)
+            (figure, single) = (cache, False)
 
-        if schema is __marker:
+        if figure is __marker:
 
-            raise ValueError('got ellipsis before schema')
+            raise ValueError('got ellipsis before figure')
 
         while True:
 
@@ -164,7 +178,7 @@ def c_array(schema, data, **extra):
 
             try:
 
-                validate(schema, data, **extra)
+                check(figure, data, **extra)
 
             except Error as error:
 
@@ -176,22 +190,22 @@ def c_array(schema, data, **extra):
 
                 break
 
-        cache = schema
+        cache = figure
 
 
-def c_dict(schema, data, **extra):
+def _c_dict(figure, data, **extra):
 
-    for (schema_k, schema_v) in schema.items():
+    for (figure_k, figure_v) in figure.items():
 
-        optional = isinstance(schema_k, Opt)
+        optional = isinstance(figure_k, Opt)
 
         if optional:
 
-            schema_k = schema_k.value
+            figure_k = figure_k.value
 
         try:
 
-            data_v = data[schema_k]
+            data_v = data[figure_k]
 
         except KeyError:
 
@@ -199,38 +213,38 @@ def c_dict(schema, data, **extra):
 
                 continue
 
-            raise Error('key', schema_k) from error
+            raise Error('key', figure_k) from error
 
         try:
 
-            validate(schema_v, data_v, **extra)
+            check(figure_v, data_v, **extra)
 
         except Error as error:
 
-            raise Error('value', schema_k) from error
+            raise Error('value', figure_k) from error
 
 
-overs = (
+_overs = (
     (
-        c_or,
+        _c_nex,
         lambda cls: (
-            issubclass(cls, Or)
+            issubclass(cls, Nex)
         )
     ),
     (
-        c_and,
+        _c_and,
         lambda cls: (
             issubclass(cls, And)
         )
     ),
     (
-        c_dict,
+        _c_dict,
         lambda cls: (
             issubclass(cls, collections.abc.Mapping)
         )
     ),
     (
-        c_array,
+        _c_array,
         lambda cls: (
             issubclass(cls, collections.abc.Sequence)
             and not issubclass(
@@ -242,46 +256,55 @@ overs = (
 )
 
 
-def validate(schema, data, auto = False):
+def check(figure, data, auto = False):
 
-    creator = isinstance(schema, type)
+    if isinstance(figure, Con):
 
-    if not creator and callable(schema):
+        data = figure.change(data)
 
-        execute = schema
+        figure = figure.value
+
+    source = isinstance(figure, type)
+
+    if not source and callable(figure):
+
+        execute = figure
 
     else:
 
-        if creator:
+        if source:
 
-            check = c_type
+            use = _c_type
 
         else:
 
-            cls = type(schema)
+            cls = type(figure)
 
-            for (check, use) in overs:
+            for (use, accept) in _overs:
 
-                if use(cls):
+                if accept(cls):
 
                     break
 
             else:
 
-                check = None
+                use = None
 
-            if not check:
+            if not use:
 
                 if auto:
 
-                    c_type(cls, data)
+                    _c_type(cls, data)
 
-                check = c_object
+                use = _c_object
 
             else:
 
-                check = functools.partial(check, auto = auto)
+                use = functools.partial(use, auto = auto)
 
-        execute = functools.partial(check, schema)
+        execute = functools.partial(use, figure)
 
     execute(data)
+
+
+Or = Nex

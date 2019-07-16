@@ -2,28 +2,29 @@
 ```py
 import shucks
 import functools
+import string
 
 # custom check
-def lengthy(min, max, data):
+def title(data):
 
-    length = len(data)
+    letter = data[0]
 
-    if min <= length <= max:
+    if letter in string.ascii_uppercase:
 
-        return
-
-    code = 'length'
+      return
 
     # throw error if something's wrong
-    raise shucks.Error(code, min, max)
+    raise shucks.Error('title', letter)
 
 # schema
 human = {
     'gold': int,
     'name': shucks.And(
         str,
+        # prebuilt checks
+        shucks.range(1, 32),
         # callables used with just data
-        functools.partial(lengthy, 1, 16)
+        title
     ),
     'animal': shucks.Or(
         'dog',

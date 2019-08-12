@@ -6,7 +6,7 @@ with open('README.md') as file:
 
 name = 'shucks'
 
-version = '0.1.0'
+version = '0.1.1'
 
 author = 'Exahilosys'
 

@@ -2,10 +2,17 @@ import functools
 import collections.abc
 
 
-__all__ = ('Error', 'Op', 'Nex', 'And', 'Sig', 'Opt', 'Con', 'check', 'Or')
+__all__ = ('Error', 'Op', 'Nex', 'Or', 'And', 'Sig', 'Opt', 'Con', 'check')
 
 
 class Error(Exception):
+
+    """
+    Raised upon check failure.
+
+    :var gen chain:
+        Yields all contributing errors.
+    """
 
     __slots__ = ()
 
@@ -22,6 +29,27 @@ class Error(Exception):
 
                 break
 
+    def draw(self, alias = lambda value: value):
+
+        (name, *values) = self.args
+
+        data = tuple(map(alias, values))
+
+        return (name, data)
+
+    def show(self, **kwargs):
+
+        """
+        show(alias = None)
+
+        Get simple json-friendly info about this error family.
+
+        :param func alias:
+            Used on every ``(name, value)``'s value; result used instead.
+        """
+
+        return tuple(error.draw(**kwargs) for error in self.chain)
+
     def __repr__(self):
 
         (code, *info) = self.args
@@ -36,6 +64,10 @@ class Error(Exception):
 
 
 class Op(tuple):
+
+    """
+    Represents a collection of operatable values.
+    """
 
     __slots__ = ()
 
@@ -52,15 +84,57 @@ class Op(tuple):
 
 class Nex(Op):
 
+    """
+    Represents the ``OR`` operator.
+
+    Values will be checked in order. If none pass, the last error is raised.
+
+    .. code-block:: py
+
+        >>> def less(value):
+        >>>     return value < 5:
+        >>> def more(value):
+        >>>     return value > 9
+        >>> fig = Nex(int, less, more)
+        >>> check(fig, 12)
+
+    The above will pass, since ``12`` is greater than ``9``.
+    """
+
     __slots__ = ()
 
 
+#: Alias of :class:`Nex`.
+Or = Nex
+
+
 class And(Op):
+
+    """
+    Represents the ``AND`` operator.
+
+    Values will be checked in order. If one fails, its error is raised.
+
+    .. code-block:: py
+
+        >>> def less(value):
+        >>>     return value < 5:
+        >>> def more(value):
+        >>>     return value > 9
+        >>> fig = Nex(int, less, more)
+        >>> check(fig, 12)
+
+    The above will fail, since ``12`` is not less than ``5``.
+    """
 
     __slots__ = ()
 
 
 class Sig:
+
+    """
+    Represents an arbitrary value that's meant to be used in a specfic way.
+    """
 
     __slots__ = ('value',)
 
@@ -75,10 +149,34 @@ class Sig:
 
 class Opt(Sig):
 
+    """
+    Signals an optional value.
+
+    .. code-block:: py
+
+        >>> fig = {Opt('one'): int, 'two': int}
+        >>> check(fig, {'two': 5})
+
+    The above will pass since ``"one"`` is not required but ``"two"`` is.
+    """
+
     __slots__ = ()
 
 
 class Con(Sig):
+
+    """
+    Signals a conversion to the data before checking.
+
+    .. code-block:: py
+
+        >>> def less(value):
+        >>>     return value < 8
+        >>> fig = (str, Con(len, less))
+        >>> check(fig, 'ganglioneuralgia')
+
+    The above will fail since the length of... that is greater than ``8``.
+    """
 
     __slots__ = ('change',)
 
@@ -258,6 +356,17 @@ _overs = (
 
 def check(figure, data, auto = False):
 
+    """
+    Validates data against the figure.
+
+    :param any figure:
+        Some object or class to validate against.
+    :param any data:
+        Some object or class to validate.
+    :param bool auto:
+        Whether to validate types.
+    """
+
     if isinstance(figure, Con):
 
         data = figure.change(data)
@@ -305,6 +414,3 @@ def check(figure, data, auto = False):
         execute = functools.partial(use, figure)
 
     execute(data)
-
-
-Or = Nex

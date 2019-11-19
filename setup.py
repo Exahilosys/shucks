@@ -1,12 +1,12 @@
 import setuptools
 
-with open('README.md') as file:
+with open('README.rst') as file:
 
     readme = file.read()
 
 name = 'shucks'
 
-version = '0.1.1'
+version = '0.1.4'
 
 author = 'Exahilosys'
 
@@ -19,7 +19,6 @@ setuptools.setup(
     url = url,
     packages = setuptools.find_packages(),
     license = 'MIT',
-    description = 'Mini schema validator.',
-    long_description = readme,
-    long_description_content_type = 'text/markdown'
+    description = 'Quick schema validation.',
+    long_description = readme
 )

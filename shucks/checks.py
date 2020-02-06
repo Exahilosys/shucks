@@ -20,6 +20,11 @@ def range(lower, upper, left = True, right = True):
         Use left inclusive.
     :param bool right:
         use right inclusive.
+
+    .. code-block:: py
+
+        >>> valid = range(0, 5.5, left = False) # (0, 5.5]
+        >>> check(valid, 0) # fail, not included
     """
 
     def wrapper(value):
@@ -48,6 +53,10 @@ def contain(store, white = True):
         The store.
     :param bool white:
         Whether to check for presence or absence.
+
+    >>> import string
+    >>> valid = contain(string.ascii_lowercase)
+    >>> check(valid, 'H') # fail, capital
     """
 
     def wrapper(value):

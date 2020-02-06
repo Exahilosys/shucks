@@ -6,9 +6,6 @@ Quick schema validation.
 .. toctree::
   :maxdepth: 2
 
-Schema
-------
-
 .. automodule:: shucks.schema
   :members:
   :show-inheritance:

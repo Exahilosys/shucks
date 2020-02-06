@@ -1,6 +1,8 @@
 import operator
 import functools
 
+from . import schema
+
 
 __all__ = ('range', 'contain')
 
@@ -32,7 +34,7 @@ def range(lower, upper, left = True, right = True):
 
             return
 
-        raise shucks.Error('range', lower, upper)
+        raise schema.Error('range', lower, upper)
 
     return wrapper
 
@@ -56,6 +58,6 @@ def contain(store, white = True):
 
             return
 
-        raise shucks.Error('contain', white)
+        raise schema.Error('contain', white)
 
     return wrapper

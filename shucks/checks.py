@@ -63,7 +63,7 @@ def contain(store, white = True):
 
         done = value in store
 
-        if done if white else not done:
+        if done == white:
 
             return
 

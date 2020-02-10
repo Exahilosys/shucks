@@ -1,6 +1,8 @@
 import functools
 import collections.abc
 
+from . import helpers
+
 
 __all__ = ('Error', 'Op', 'Nex', 'Or', 'And', 'Sig', 'Opt', 'Con', 'check')
 
@@ -102,6 +104,20 @@ class Nex(Op):
     """
 
     __slots__ = ()
+
+    def __new__(cls, *values, any = False):
+
+        if any:
+
+            (value,) = values
+
+            values = helpers.ellisplit(value)
+
+            # tupple'ing it cause yields are live
+            values = map(type(value), tuple(values))
+
+        return super().__new__(cls, *values)
+
 
 
 #: Alias of :class:`Nex`.
@@ -238,41 +254,33 @@ def _c_object(figure, data):
 
 def _c_array(figure, data, **extra):
 
-    length = len(figure)
+    limit = len(figure)
 
-    generate = iter(data)
+    figure_g = iter(figure)
+
+    data_g = iter(enumerate(data))
 
     cache = __marker
 
-    single = True
+    size = 0
 
-    index = 0
+    for figure in figure_g:
 
-    for figure in figure:
+        multi = figure is ...
 
-        if figure is ...:
+        if multi:
 
-            length -= 1
+            limit -= 1
 
-            (figure, single) = (cache, False)
+            figure = cache
 
         if figure is __marker:
 
             raise ValueError('got ellipsis before figure')
 
-        while True:
+        for source in data_g:
 
-            try:
-
-                data = next(generate)
-
-            except StopIteration:
-
-                if index < length:
-
-                    raise Error('small', index, length)
-
-                break
+            (index, data) = source
 
             try:
 
@@ -280,15 +288,39 @@ def _c_array(figure, data, **extra):
 
             except Error as error:
 
+                if multi and size < limit:
+
+                    data_g = helpers.prepend(data_g, source)
+
+                    break
+
                 raise Error('index', index) from error
 
-            index += 1
+            if multi:
 
-            if single:
+                continue
 
-                break
+            size += 1
+
+            break
 
         cache = figure
+
+    if size < limit:
+
+        raise Error('small', limit, size)
+
+    try:
+
+        next(data_g)
+
+    except StopIteration:
+
+        pass
+
+    else:
+
+        raise Error('large', limit)
 
 
 def _c_dict(figure, data, **extra):
@@ -311,7 +343,7 @@ def _c_dict(figure, data, **extra):
 
                 continue
 
-            raise Error('key', figure_k) from error
+            raise Error('key', figure_k) from None
 
         try:
 
@@ -344,11 +376,8 @@ _overs = (
     (
         _c_array,
         lambda cls: (
-            issubclass(cls, collections.abc.Sequence)
-            and not issubclass(
-                cls,
-                (str, bytes)
-            )
+            issubclass(cls, collections.abc.Iterable)
+            and not issubclass(cls, (str, bytes))
         )
     )
 )

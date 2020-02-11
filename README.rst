@@ -1,5 +1,5 @@
 Installing
-==========
+----------
 
 .. code-block:: bash
 
@@ -16,9 +16,7 @@ Simple Usage
   # custom check
   def title(data):
     letter = data[0]
-    if letter in string.ascii_uppercase:
-        return
-    raise shucks.Error('title', lower, upper)
+    return letter in string.ascii_uppercase
 
   # schema
   human = {
@@ -31,7 +29,7 @@ Simple Usage
           # prebuilt checks
           shucks.range(1, 32),
         ),
-        # use pre-converted value
+        # not converted anymore
         # callables used with just data
         title
     ),
@@ -46,7 +44,14 @@ Simple Usage
             'name': str,
             'price': float,
             # optional key
-            shucks.Opt('color'): str
+            # need 3 rgb values
+            shucks.Opt('color'): And(
+              And(
+                int,
+                shucks.range(0, 255)
+              ),
+              shucks.range(3, 3)
+            )
         },
         # infinitely check values with last schema
         ...
@@ -62,13 +67,13 @@ Simple Usage
         {
             'name': 'Arrow',
             'price': 2.66,
-            'color': 'silver'
+            'color': (190, 200, 230)
         },
         {
             'name': 'Bow',
             # not float
             'price': 24,
-            'color': 'brown'
+            'color': (140, 160, 15)
         }
     ]
   }
@@ -77,7 +82,11 @@ Simple Usage
     shucks.check(human, data, auto = True)
   except shucks.Error as error:
     # ex: instead of <class 'bool'>, show 'bool'
-    print(error.show, alias = lambda value: value.__name__)
+    def human(value):
+      if callable(value):
+        value = value.__name__
+      return value
+    print(error.show(alias = human))
 
 The above script will print the following:
 

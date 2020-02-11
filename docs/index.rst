@@ -132,13 +132,7 @@ or :code:`1`:
 
 .. note::
 
-  The data type is automatically validated against the schema type.
-
-  In the last example, upon checking a list, :code:`s.And(list` would pass
-  but then :code:`s.Or((), (s.Or(0, 1), ...))` would fail saying the data type
-  is :class:`tuple` instead of :class:`list`.
-
-  To disable auto-type-check, simply pass :code:`auto = False` to:func:`check`.
+  To enable auto type checks, simply pass :code:`auto = True` to :func:`check`.
 
 .. _at_least_extra:
 

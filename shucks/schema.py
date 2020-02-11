@@ -234,7 +234,7 @@ def _c_and(figure, data, **extra):
         check(figure, data, **extra)
 
 
-def _c_type(figure, data):
+def _c_type(figure, data, **extra):
 
     cls = type(data)
 
@@ -243,7 +243,7 @@ def _c_type(figure, data):
         raise Error('type', figure, cls)
 
 
-def _c_object(figure, data):
+def _c_object(figure, data, **extra):
 
     if figure == data:
 
@@ -354,7 +354,18 @@ def _c_dict(figure, data, **extra):
             raise Error('value', figure_k) from error
 
 
-_overs = (
+def _c_callable(figure, data, **extra):
+
+    result = figure(data)
+
+    if result:
+
+        return
+
+    raise Error('call', figure, data)
+
+
+_select = (
     (
         _c_nex,
         lambda cls: (
@@ -379,6 +390,12 @@ _overs = (
             issubclass(cls, collections.abc.Iterable)
             and not issubclass(cls, (str, bytes))
         )
+    ),
+    (
+        _c_callable,
+        lambda cls: (
+            issubclass(cls, collections.abc.Callable)
+        )
     )
 )
 
@@ -402,44 +419,28 @@ def check(figure, data, auto = False):
 
         figure = figure.value
 
-    source = isinstance(figure, type)
+    if isinstance(figure, type):
 
-    if not source and callable(figure):
-
-        execute = figure
+        use = _c_type
 
     else:
 
-        if source:
+        cls = type(figure)
 
-            use = _c_type
+        if auto:
+
+            if not isinstance(figure, Op):
+
+                _c_type(cls, data)
+
+        for (use, accept) in _select:
+
+            if accept(cls):
+
+                break
 
         else:
 
-            cls = type(figure)
+            use = _c_object
 
-            for (use, accept) in _overs:
-
-                if accept(cls):
-
-                    break
-
-            else:
-
-                use = None
-
-            if not use:
-
-                if auto:
-
-                    _c_type(cls, data)
-
-                use = _c_object
-
-            else:
-
-                use = functools.partial(use, auto = auto)
-
-        execute = functools.partial(use, figure)
-
-    execute(data)
+    use(figure, data, auto = auto)

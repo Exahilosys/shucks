@@ -137,7 +137,7 @@ class And(Op):
         >>>     return value < 5:
         >>> def more(value):
         >>>     return value > 9
-        >>> fig = Nex(int, less, more)
+        >>> fig = And(int, less, more)
         >>> check(fig, 12)
 
     The above will fail, since ``12`` is not less than ``5``.

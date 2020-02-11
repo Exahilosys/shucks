@@ -19,6 +19,6 @@ setuptools.setup(
     url = url,
     packages = setuptools.find_packages(),
     license = 'MIT',
-    description = 'Quick schema validation.',
+    description = 'Quick schema validator.',
     long_description = readme
 )

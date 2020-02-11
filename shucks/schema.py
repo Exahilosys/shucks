@@ -9,40 +9,38 @@ __all__ = ('Error', 'Op', 'Nex', 'Or', 'And', 'Sig', 'Opt', 'Con', 'check')
 
 class Error(Exception):
 
+    """
+    Thrown when something goes wrong.
+
+    :var str code:
+        Means of identification.
+    :var list[str] info:
+        Additional details used.
+    :var gen chain:
+        Yields all contributing errors.
+
+    .. warning::
+
+        :code:`.code` and :code:`.info` are derived from :code:`.args`, trying
+        to access them without passing any arguments upon raising the error will
+        result in :class:`IndexError`. The same happens when trying to
+        :func:`repr` this.
+    """
+
     __slots__ = ()
 
     @property
     def code(self):
-
-        """
-        The error's code.
-
-        .. note::
-
-            This is just the first value of its :code:`.args`.
-        """
 
         return self.args[0]
 
     @property
     def info(self):
 
-        """
-        The error's additional info.
-
-        .. note::
-
-            This is all values past the first of :code:`.args`.
-        """
-
         return self.args[1:]
 
     @property
     def chain(self):
-
-        """
-        Yields all contributing errors.
-        """
 
         while True:
 

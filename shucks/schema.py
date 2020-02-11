@@ -9,17 +9,40 @@ __all__ = ('Error', 'Op', 'Nex', 'Or', 'And', 'Sig', 'Opt', 'Con', 'check')
 
 class Error(Exception):
 
-    """
-    Raised upon check failure.
-
-    :var gen chain:
-        Yields all contributing errors.
-    """
-
     __slots__ = ()
 
     @property
+    def code(self):
+
+        """
+        The error's code.
+
+        .. note::
+
+            This is just the first value of its :code:`.args`.
+        """
+
+        return self.args[0]
+
+    @property
+    def info(self):
+
+        """
+        The error's additional info.
+
+        .. note::
+
+            This is all values past the first of :code:`.args`.
+        """
+
+        return self.args[1:]
+
+    @property
     def chain(self):
+
+        """
+        Yields all contributing errors.
+        """
 
         while True:
 
@@ -54,11 +77,9 @@ class Error(Exception):
 
     def __repr__(self):
 
-        (code, *info) = self.args
+        info = ', '.join(map(repr, self.info))
 
-        info = ', '.join(map(repr, info))
-
-        return f'{self.__class__.__name__}({code}: {info})'
+        return f'{self.__class__.__name__}({self.code}: {info})'
 
     def __str__(self):
 
@@ -356,13 +377,23 @@ def _c_dict(figure, data, **extra):
 
 def _c_callable(figure, data, **extra):
 
-    result = figure(data)
+    try:
 
-    if result:
+        result = figure(data)
 
-        return
+    except Error as error:
 
-    raise Error('call', figure, data)
+        source = error
+
+    else:
+
+        if result in (True or None):
+
+            return
+
+        source = None
+
+    raise Error('call', figure, data) from source
 
 
 _select = (

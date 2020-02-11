@@ -54,9 +54,11 @@ def contain(store, white = True):
     :param bool white:
         Whether to check for presence or absence.
 
-    >>> import string
-    >>> valid = contain(string.ascii_lowercase)
-    >>> check(valid, 'H') # fail, capital
+    .. code-block:: py
+
+        >>> import string
+        >>> valid = contain(string.ascii_lowercase)
+        >>> check(valid, 'H') # fail, capital
     """
 
     def wrapper(value):

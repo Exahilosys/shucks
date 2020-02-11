@@ -12,7 +12,7 @@ class Error(Exception):
     """
     Thrown when something goes wrong.
 
-    :var str code:
+    :var str `code`:
         Means of identification.
     :var list[str] info:
         Additional details used.
@@ -21,10 +21,12 @@ class Error(Exception):
 
     .. warning::
 
-        :code:`.code` and :code:`.info` are derived from :code:`.args`, trying
-        to access them without passing any arguments upon raising the error will
-        result in :class:`IndexError`. The same happens when trying to
-        :func:`repr` this.
+        :code:`.code` and :code:`.info` are derived from :code:`.args`.
+
+        Accessing them with no arguments passed upon creation may result in
+        :class:`IndexError`.
+
+        The same happens when trying to :func:`repr` this.
     """
 
     __slots__ = ()

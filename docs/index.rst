@@ -53,7 +53,7 @@ Missing mapping keys raise:
 
 .. code-block:: py
 
-  Error('key', missing_key)
+  Error('key', expected_key)
 
 Mapping value check fails raise:
 

@@ -10,6 +10,69 @@ Quick schema validation.
   :members:
   :show-inheritance:
 
+Errors
+------
+
+Type fails give raise:
+
+.. code-block:: py
+
+  Error('type', expected_cls, given_cls)
+
+Object equality fails raise:
+
+.. code-block:: py
+
+  Error('object', expected_val, given_val)
+
+Array value check fails raise:
+
+.. code-block:: py
+
+  Error('index', index) from source_error
+
+Arrays that are too small raise:
+
+.. code-block:: py
+
+  Error('small', expected_size, actual_size)
+
+Arrays that have at least one additional value raise:
+
+.. code-block:: py
+
+  Error('large', exceeded_size)
+
+.. note::
+
+  Array checking is done in an iterator-exhausting fashion.
+
+  Upon finishing, one more item is attempted to be generated for this error.
+
+Missing mapping keys raise:
+
+.. code-block:: py
+
+  Error('key', missing_key)
+
+Mapping value check fails raise:
+
+.. code-block:: py
+
+  Error('value', current_key) from source_error
+
+Callables that don't return :code:`True` or :code:`None` raise:
+
+.. code-block:: py
+
+  Error('call', used_func, current_data)
+
+Callables that raise :class:`shucks.schema.Error` raise:
+
+.. code-block:: py
+
+  Error('call', used_func, current_data) from source_error
+
 Validators
 ----------
 
@@ -86,6 +149,29 @@ Check if the data is a :class:`str` instance and its length between incl
 .. code-block:: py
 
   s.And(str, s.Con(len, s.range(1, 10)))
+
+.. _custom:
+
+Check if the data is even:
+
+.. code-block:: py
+
+  even = lambda data: not data % 2
+
+Check if every line in a file starts with :code:`_`:
+
+.. code-block:: py
+
+  def empty(data):
+    with open(data) as file:
+      lines = file.read().splitlines()
+    for (index, line) in enumerate(lines):
+        if not line.startswith('_'):
+          raise s.Error('lines', index)
+
+.. note::
+
+  Refer to the end of `Errors`_ for info about failing callables.
 
 Array
 -----

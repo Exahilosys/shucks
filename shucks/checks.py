@@ -39,7 +39,7 @@ def range(lower, upper, left = True, right = True):
 
             return
 
-        raise schema.Error('range', lower, upper)
+        raise schema.Error('range', lower, upper, left, right)
 
     return wrapper
 

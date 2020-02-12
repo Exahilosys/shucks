@@ -60,7 +60,9 @@ def contain(store, white = True):
     """
 
     def wrapper(value):
-        if (value in store) is white:
+        
+        if value in store is white:
+            
             return
 
         raise schema.Error('contain', white)

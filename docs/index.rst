@@ -335,3 +335,46 @@ Check if the data has a *required* :code:`tic` key against :code:`tac` or
   .. code-block:: py
 
     s.Con(dict.items, (('key', 'value'), ...))
+
+.. _extra:
+
+Extra
+-----
+
+Consider the follow classes:
+
+.. code-block:: py
+
+   class MyClass0:
+      def __init__(self, v):
+         self.v = v
+
+   class MyClass1:
+      def __init__(self, n):
+         self.n = n
+
+Create functions (``d_``) that conditionally return checkers (``c_``):
+
+.. code-block:: py
+
+   def c_0(figure, obj):
+      shucks.check(int, obj.v)
+
+   def c_0(figure, obj):
+      shucks.check(str, obj.n)
+
+   def d_0(figure):
+      if isinstance(figure, MyClass0):
+         return c_0
+      if isinstance(figure, MyClass1):
+         return c_1
+
+   determinators = [d_0]
+
+Now simply use :code:`extra = determinators` when your data includes objects of
+such classes.
+
+.. note::
+
+   :code:`extra` accepts a list for adding and removing determinators
+   accordingly.

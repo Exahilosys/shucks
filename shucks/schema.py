@@ -79,7 +79,7 @@ class Error(Exception):
 
         info = ', '.join(map(repr, self.info))
 
-        return f'{self.__class__.__name__}({self.code}: {info})'
+        return f'{self.code}: {info}'
 
     def __str__(self):
 
@@ -443,7 +443,7 @@ def check(figure, data, auto = False, extra = []):
     :param bool auto:
         Whether to validate types.
     :param list[func] extra:
-        Additional checkers used before prebuilts.
+        Called with ``figure`` and should return None or a checker.
     """
 
     if isinstance(figure, Con):
@@ -452,32 +452,40 @@ def check(figure, data, auto = False, extra = []):
 
         figure = figure.value
 
-    for use in extra:
+    for get in extra:
 
-        use(figure, data)
+        use = get(figure)
 
-    if isinstance(figure, type):
+        if use:
 
-        use = _c_type
+            break
 
     else:
 
-        cls = type(figure)
+        if isinstance(figure, type):
 
-        if auto:
-
-            if not isinstance(figure, Op):
-
-                _c_type(cls, data)
-
-        for (use, accept) in _select:
-
-            if accept(cls):
-
-                break
+            use = _c_type
 
         else:
 
-            use = _c_object
+            cls = type(figure)
 
-    use(figure, data, auto = auto, extra = extra)
+            if auto:
+
+                if not isinstance(figure, Op):
+
+                    _c_type(cls, data)
+
+            for (use, accept) in _select:
+
+                if accept(cls):
+
+                    break
+
+            else:
+
+                use = _c_object
+
+        use = functools.partial(use, auto = auto, extra = extra)
+
+    use(figure, data)

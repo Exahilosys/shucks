@@ -431,7 +431,7 @@ _select = (
 )
 
 
-def check(figure, data, auto = False):
+def check(figure, data, auto = False, extra = []):
 
     """
     Validates data against the figure.
@@ -442,6 +442,8 @@ def check(figure, data, auto = False):
         Some object or class to validate.
     :param bool auto:
         Whether to validate types.
+    :param list[func] extra:
+        Additional checkers used before prebuilts.
     """
 
     if isinstance(figure, Con):
@@ -449,6 +451,10 @@ def check(figure, data, auto = False):
         data = figure.change(data)
 
         figure = figure.value
+
+    for use in extra:
+
+        use(figure, data)
 
     if isinstance(figure, type):
 

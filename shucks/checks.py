@@ -1,3 +1,4 @@
+import collections
 import operator
 import functools
 
@@ -7,7 +8,13 @@ from . import schema
 __all__ = ('range', 'contain')
 
 
-def range(lower, upper, left = True, right = True):
+class range(
+        collections.namedtuple(
+            'range',
+            'lower upper left right',
+            defaults = (True, True)
+        )
+    ):
 
     """
     Check whether the value is between the lower and upper bounds.
@@ -27,24 +34,30 @@ def range(lower, upper, left = True, right = True):
         >>> check(valid, 0) # fail, not included
     """
 
-    def wrapper(value):
+    __slots__ = ()
 
-        sides = (left, right)
+    def __call__(self, value):
+
+        sides = (self.left, self.right)
 
         operators = (operator.lt, operator.le)
 
         (former, latter) = map(operators.__getitem__, sides)
 
-        if former(lower, value) and latter(value, upper):
+        if former(self.lower, value) and latter(value, self.upper):
 
             return
 
-        raise schema.Error('range', lower, upper, left, right)
-
-    return wrapper
+        raise schema.Error('range', self)
 
 
-def contain(store, white = True):
+class contain(
+        collections.namedtuple(
+            'range',
+            'store white',
+            defaults = (True,)
+        )
+    ):
 
     """
     Check whether the value against the store.
@@ -61,14 +74,14 @@ def contain(store, white = True):
         >>> check(valid, 'H') # fail, capital
     """
 
-    def wrapper(value):
+    __slots__ = ()
 
-        done = value in store
+    def __call__(self, value):
 
-        if done if white else not done:
+        done = value in self.store
+
+        if done if self.white else not done:
 
             return
 
-        raise schema.Error('contain', white)
-
-    return wrapper
+        raise schema.Error('contain', self)

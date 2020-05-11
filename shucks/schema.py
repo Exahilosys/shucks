@@ -480,4 +480,4 @@ def check(figure, data, auto = False, extra = []):
 
             use = _c_object
 
-    use(figure, data, auto = auto)
+    use(figure, data, auto = auto, extra = extra)

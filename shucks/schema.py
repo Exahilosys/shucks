@@ -45,19 +45,14 @@ class Error(Exception):
     def chain(self):
 
         while True:
-
             yield self
-
             self = self.__cause__
-
             if self is None:
-
                 break
 
     def draw(self, alias = lambda value: value):
 
         (name, *values) = self.args
-
         data = tuple(map(alias, values))
 
         return (name, data)
@@ -129,16 +124,12 @@ class Nex(Op):
     def __new__(cls, *values, any = False):
 
         if any:
-
             (value,) = values
-
             values = helpers.ellisplit(value)
-
             # tupple'ing it cause yields are live
             values = map(type(value), tuple(values))
 
         return super().__new__(cls, *values)
-
 
 
 #: Alias of :class:`Nex`.
@@ -230,128 +221,82 @@ __marker = object()
 def _c_nex(figure, data, **extra):
 
     for figure in figure:
-
         try:
-
             check(figure, data, **extra)
-
         except Error as _error:
-
             error = _error
-
         else:
-
             break
-
     else:
-
         raise error
 
 
 def _c_and(figure, data, **extra):
 
     for figure in figure:
-
         check(figure, data, **extra)
 
 
 def _c_type(figure, data, **extra):
 
     cls = type(data)
-
     if not issubclass(cls, figure):
-
         raise Error('type', figure, cls)
 
 
 def _c_object(figure, data, **extra):
 
     if figure == data:
-
         return
-
     raise Error('object', figure, data)
 
 
 def _c_array(figure, data, **extra):
 
     limit = len(figure)
-
     figure_g = iter(figure)
-
     data_g = iter(enumerate(data))
-
     cache = __marker
-
     size = 0
 
     for figure in figure_g:
-
         multi = figure is ...
-
         if multi:
-
             limit -= 1
-
             figure = cache
-
         if figure is __marker:
-
             raise ValueError('got ellipsis before figure')
-
         for source in data_g:
-
             (index, data) = source
-
             try:
-
                 check(figure, data, **extra)
-
             except Error as error:
-
                 if multi and size < limit:
-
                     data_g = helpers.prepend(data_g, source)
-
                     break
-
                 raise Error('index', index) from error
-
             if multi:
-
                 continue
-
             size += 1
-
             break
-
         cache = figure
 
     if size < limit:
-
         raise Error('small', limit, size)
 
     try:
-
         next(data_g)
-
     except StopIteration:
-
         pass
-
     else:
-
         raise Error('large', limit)
 
 
 def _c_dict(figure, data, **extra):
 
     for (figure_k, figure_v) in figure.items():
-
         optional = isinstance(figure_k, Opt)
-
         if optional:
-
             figure_k = figure_k.value
 
         try:
@@ -447,43 +392,25 @@ def check(figure, data, auto = False, extra = []):
     """
 
     if isinstance(figure, Con):
-
         data = figure.change(data)
-
         figure = figure.value
 
     for get in extra:
-
         use = get(figure)
-
         if use:
-
             break
-
     else:
-
         if isinstance(figure, type):
-
             use = _c_type
-
         else:
-
             cls = type(figure)
-
             if auto:
-
                 if not isinstance(figure, Op):
-
                     _c_type(cls, data)
-
             for (use, accept) in _select:
-
                 if accept(cls):
-
                     break
-
             else:
-
                 use = _c_object
 
         use = functools.partial(use, auto = auto, extra = extra)

@@ -39,13 +39,9 @@ class range(
     def __call__(self, value):
 
         sides = (self.left, self.right)
-
         operators = (operator.lt, operator.le)
-
         (former, latter) = map(operators.__getitem__, sides)
-
         if former(self.lower, value) and latter(value, self.upper):
-
             return
 
         raise schema.Error('range', self)
@@ -78,10 +74,7 @@ class contain(
 
     def __call__(self, value):
 
-        done = value in self.store
-
-        if done if self.white else not done:
-
+        if value in store is white:
             return
 
         raise schema.Error('contain', self)

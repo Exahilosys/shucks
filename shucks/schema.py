@@ -307,44 +307,27 @@ def _c_dict(figure, data, **extra):
         optional = isinstance(figure_k, Opt)
         if optional:
             figure_k = figure_k.value
-
         try:
-
             data_v = data[figure_k]
-
         except KeyError:
-
             if optional:
-
                 continue
-
             raise Error('key', figure_k) from None
-
         try:
-
             check(figure_v, data_v, **extra)
-
         except Error as error:
-
             raise Error('value', figure_k) from error
 
 
 def _c_callable(figure, data, **extra):
 
     try:
-
         result = figure(data)
-
     except Error as error:
-
         source = error
-
     else:
-
-        if result in (True or None):
-
+        if result is None:
             return
-
         source = None
 
     raise Error('call', figure, data) from source
@@ -364,6 +347,12 @@ _select = (
         )
     ),
     (
+        _c_callable,
+        lambda cls: (
+            issubclass(cls, collections.abc.Callable)
+        )
+    ),
+    (
         _c_dict,
         lambda cls: (
             issubclass(cls, collections.abc.Mapping)
@@ -374,12 +363,6 @@ _select = (
         lambda cls: (
             issubclass(cls, collections.abc.Iterable)
             and not issubclass(cls, (str, bytes))
-        )
-    ),
-    (
-        _c_callable,
-        lambda cls: (
-            issubclass(cls, collections.abc.Callable)
         )
     )
 )

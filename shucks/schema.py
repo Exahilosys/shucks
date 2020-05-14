@@ -29,17 +29,27 @@ class Error(Exception):
         The same happens when trying to :func:`repr` this.
     """
 
-    __slots__ = ()
+    __slots__ = ('_code', '_info')
+
+    def __init__(self, code, *info, message = None):
+        if not message:
+            message = str(code)
+            if info:
+                message = f'{message}: ' + ', '.join(map(repr, info))
+        super().__init__(message)
+
+        self._code = code
+        self._info = info
 
     @property
     def code(self):
 
-        return self.args[0]
+        return self._code
 
     @property
     def info(self):
 
-        return self.args[1:]
+        return self._info
 
     @property
     def chain(self):
@@ -52,10 +62,9 @@ class Error(Exception):
 
     def draw(self, alias = lambda value: value):
 
-        (name, *values) = self.args
-        data = tuple(map(alias, values))
+        data = tuple(map(alias, self._info))
 
-        return (name, data)
+        return (code, data)
 
     def show(self, **kwargs):
 
@@ -72,9 +81,9 @@ class Error(Exception):
 
     def __repr__(self):
 
-        info = ', '.join(map(repr, self.info))
+        info = ', '.join(map(repr, self._info))
 
-        return f'{self.code}: {info}'
+        return f'{self._code}: {info}'
 
     def __str__(self):
 

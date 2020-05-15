@@ -64,7 +64,7 @@ class Error(Exception):
 
         data = tuple(map(alias, self._info))
 
-        return (code, data)
+        return (self.code, data)
 
     def show(self, **kwargs):
 

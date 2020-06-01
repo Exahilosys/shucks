@@ -321,16 +321,7 @@ def _c_dict(figure, data, **extra):
 
 def _c_callable(figure, data, **extra):
 
-    try:
-        result = figure(data)
-    except Error as error:
-        source = error
-    else:
-        if result is None:
-            return
-        source = None
-
-    raise Error('call', figure, data) from source
+    figure(data)
 
 
 _select = (
@@ -383,7 +374,9 @@ def check(figure, data, auto = False, extra = []):
         Called with ``figure`` and should return None or a checker.
     """
 
-    if isinstance(figure, Con):
+    while True:
+        if not isinstance(figure, Con):
+            break
         data = figure.change(data)
         figure = figure.value
 

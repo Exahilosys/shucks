@@ -49,7 +49,7 @@ class range(
 
 class contain(
         collections.namedtuple(
-            'range',
+            'contain',
             'store white',
             defaults = (True,)
         )
@@ -74,7 +74,7 @@ class contain(
 
     def __call__(self, value):
 
-        if value in store is white:
+        if (value in self.store) is self.white:
             return
 
         raise schema.Error('contain', self)

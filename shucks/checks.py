@@ -1,6 +1,7 @@
 import collections
 import operator
 import functools
+import math
 
 from . import schema
 
@@ -30,11 +31,24 @@ class range(
 
     .. code-block:: py
 
-        >>> valid = range(0, 5.5, left = False) # (0, 5.5]
+        >>> valid = range(5.5, left = False) # (0, 5.5]
         >>> check(valid, 0) # fail, not included
     """
 
     __slots__ = ()
+
+    def __new__(cls, arg0 = None, arg1 = None, /, **kwargs):
+
+        for (key, value) in cls._field_defaults.items():
+            kwargs.setdefault(key, value)
+
+        min = 0
+        if not arg0 is None:
+            max = arg0
+            if not arg1 is None:
+                (min, max) = (max, arg1)
+
+        return super().__new__(cls, min, max, **kwargs)
 
     def __call__(self, value):
 

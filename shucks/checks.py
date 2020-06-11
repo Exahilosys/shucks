@@ -47,6 +47,8 @@ class range(
             max = arg0
             if not arg1 is None:
                 (min, max) = (max, arg1)
+        else:
+            max = math.inf
 
         return super().__new__(cls, min, max, **kwargs)
 

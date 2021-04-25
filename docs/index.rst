@@ -13,7 +13,7 @@ Quick schema validation.
 Errors
 ------
 
-Type fails give raise:
+Type fails raise:
 
 .. code-block:: py
 
@@ -285,7 +285,7 @@ Mapping
 
 .. _required:
 
-Check if the data has *at least* **one** :code:`foo` key against :code:`nar`:
+Check if the data has *at least* **one** :code:`foo` key against :code:`bar`:
 
 .. code-block:: py
 

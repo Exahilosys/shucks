@@ -61,22 +61,21 @@ Mapping value check fails raise:
 
   Error('value', current_key) from source_error
 
-Callables that don't return :code:`True` or :code:`None` raise:
+Callables that don't return :code:`True` raise:
 
 .. code-block:: py
 
   Error('call', used_func, current_data)
 
-Callables that raise :class:`shucks.schema.Error` raise:
+.. warn::
 
-.. code-block:: py
-
-  Error('call', used_func, current_data) from source_error
+  :class:`ValueError` raises when neither :code:`True` or :code:`False` are
+  returned.
 
 Validators
 ----------
 
-Some pre-made callable validators exist to make your life easier:
+Some ready-made validators exist to make your life easier:
 
 .. automodule:: shucks.checks
   :members:
@@ -150,6 +149,30 @@ Check if the data is a :class:`str` instance and its length between incl
 
   s.And(str, s.Con(len, s.range(1, 10)))
 
+.. _if:
+
+Check further only if :code:`str`:
+
+.. code-block:: py
+
+  s.If(str, s.Con(len, s.range(1, 10)))
+
+Check if 10 characters when str, or convert and check if int.
+
+.. code-block:: py
+
+  _c_lr = s.Con(len, s.range(1, 10))
+
+  s.If(str, _c_lr, s.Con(str, _c_lr))
+
+.. _wrap:
+
+Raise an error upon failure:
+
+.. code-block:: py
+
+  s.wrap(s.Con(len, s.range(1, 10)), 'phone', 'no more than 10 digits required')
+
 .. _custom:
 
 Check if the data is even:
@@ -168,6 +191,7 @@ Check if every line in a file starts with :code:`_`:
     for (index, line) in enumerate(lines):
         if not line.startswith('_'):
           raise s.Error('lines', index)
+    return True # otherwise, 'call' error
 
 .. note::
 

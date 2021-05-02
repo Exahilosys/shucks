@@ -1,11 +1,21 @@
 import functools
 import collections.abc
+import os
 
 from . import helpers
 
 
-__all__ = ('Error', 'Op', 'Nex', 'Or', 'And', 'Sig', 'Opt', 'Con', 'check',
-           'wrap')
+__all__ = ('nil', 'Error', 'Op', 'Nex', 'Or', 'And', 'Opt', 'Con', 'Rou', 'If',
+           'check', 'wrap')
+
+
+__marker = object()
+
+
+"""
+Used to signify nonexistance.
+"""
+nil = object()
 
 
 class Error(Exception):
@@ -61,13 +71,15 @@ class Error(Exception):
             if self is None:
                 break
 
-    def draw(self, alias = lambda value: value):
+    def draw(self, alias = lambda code, info: (code, info)):
 
         data = tuple(map(alias, self._info))
 
         return (self.code, data)
 
-    def show(self, **kwargs):
+    def show(self,
+             use = lambda code, info: f'{code}: {info}',
+             sep = os.linesep):
 
         """
         show(alias = None)
@@ -78,7 +90,12 @@ class Error(Exception):
             Used on every ``(name, value)``'s value; result used instead.
         """
 
-        return tuple(error.draw(**kwargs) for error in self.chain)
+        apply = lambda error: use(error.code, error.info)
+        parts = map(apply, self.chain)
+
+        value = sep.join(parts)
+
+        return value
 
     def __repr__(self):
 
@@ -142,7 +159,9 @@ class Nex(Op):
         return super().__new__(cls, *values)
 
 
-#: Alias of :class:`Nex`.
+"""
+Alias of :class:`Nex`.
+"""
 Or = Nex
 
 
@@ -168,10 +187,17 @@ class And(Op):
     __slots__ = ()
 
 
-class Sig:
+class Opt:
 
     """
-    Represents an arbitrary value that's meant to be used in a specfic way.
+    Signals an optional value.
+
+    .. code-block:: py
+
+        >>> fig = {Opt('one'): int, 'two': int}
+        >>> check(fig, {'two': 5})
+
+    The above will pass since ``"one"`` is not required but ``"two"`` is.
     """
 
     __slots__ = ('value',)
@@ -185,23 +211,7 @@ class Sig:
         return f'{self.__class__.__name__}({self.value})'
 
 
-class Opt(Sig):
-
-    """
-    Signals an optional value.
-
-    .. code-block:: py
-
-        >>> fig = {Opt('one'): int, 'two': int}
-        >>> check(fig, {'two': 5})
-
-    The above will pass since ``"one"`` is not required but ``"two"`` is.
-    """
-
-    __slots__ = ()
-
-
-class Con(Sig):
+class Con:
 
     """
     Signals a conversion to the data before checking.
@@ -216,16 +226,47 @@ class Con(Sig):
     The above will fail since the length of... that is greater than ``8``.
     """
 
-    __slots__ = ('change',)
+    __slots__ = ('change', 'figure')
 
-    def __init__(self, change, *args):
-
-        super().__init__(*args)
+    def __init__(self, change, figure):
 
         self.change = change
+        self.figure = figure
 
 
-__marker = object()
+class Rou:
+
+    """
+    Routes validation according to a condition.
+
+    .. code-block:: py
+
+        >>> fig = And(
+        >>>     str,
+        >>>     If(
+        >>>         lambda data: '@' in data,
+        >>>         email_fig, # true
+        >>>         Con(int, phone_fig) # false
+        >>>     )
+        >>> )
+        >>> check(fig, 'admin@domain.com')
+        >>> check(fig, '0123456789')
+    """
+
+    __slots__ = ('predicate', 'success', 'failure')
+
+    def __init__(self, predicate, success, failure = nil):
+
+        self.predicate = predicate
+
+        self.success = success
+        self.failure = failure
+
+
+"""
+Alias of :class:`.Rou`.
+"""
+If = Rou
 
 
 def _c_nex(figure, data, **extra):
@@ -250,23 +291,30 @@ def _c_and(figure, data, **extra):
 def _c_type(figure, data, **extra):
 
     cls = type(data)
-    if not issubclass(cls, figure):
-        raise Error('type', figure, cls)
+
+    if issubclass(cls, figure):
+        return
+
+    raise Error('type', figure, cls)
 
 
 def _c_object(figure, data, **extra):
 
     if figure == data:
         return
+
     raise Error('object', figure, data)
 
 
 def _c_array(figure, data, **extra):
 
     limit = len(figure)
+
     figure_g = iter(figure)
     data_g = iter(enumerate(data))
+
     cache = __marker
+
     size = 0
 
     for figure in figure_g:
@@ -322,10 +370,24 @@ def _c_dict(figure, data, **extra):
 
 def _c_callable(figure, data, **extra):
 
-    figure(data)
+    result = figure(data)
+
+    if result is True:
+        return
+
+    if result is False:
+        raise Error('call', figure, data)
+
+    raise TypeError(f'unexpected callable result {result} from {figure}')
 
 
-_select = (
+_group_c = (
+    (
+        _c_type,
+        lambda cls: (
+            issubclass(cls, type)
+        )
+    ),
     (
         _c_nex,
         lambda cls: (
@@ -360,6 +422,40 @@ _select = (
 )
 
 
+def _s_con(figure, data):
+
+    data = figure.change(data)
+
+    figure = figure.figure
+
+    return (figure, data)
+
+
+def _s_rou(figure, data):
+
+    result = figure.predicate(data)
+
+    figure = figure.success if result else figure.failure
+
+    return figure
+
+
+_group_s = (
+    (
+        _s_con,
+        lambda cls: (
+            issubclass(cls, Con)
+        )
+    ),
+    (
+        _s_rou,
+        lambda cls: (
+            issubclass(cls, Rou)
+        )
+    )
+)
+
+
 def check(figure, data, auto = False, extra = []):
 
     """
@@ -372,61 +468,67 @@ def check(figure, data, auto = False, extra = []):
     :param bool auto:
         Whether to validate types.
     :param list[func] extra:
-        Called with ``figure`` and should return None or a checker.
+        Called with ``figure`` and should return :var:`.nil` or a figure.
     """
 
-    while True:
-        if not isinstance(figure, Con):
-            break
-        data = figure.change(data)
-        figure = figure.value
+    use = check
+
+    def execute(*args):
+        use(*args, auto = auto, extra = extra)
+        return True # so _c_callable compliant
+
+    cls = type(figure)
+
+    try:
+        use = helpers.select(_group_s, cls)
+    except helpers.SelectError:
+        pass
+    else:
+        (figure, data) = use(figure, data)
+        return execute(figure, data)
+
+    if figure is nil:
+        return
 
     for get in extra:
-        use = get(figure)
-        if use:
-            break
-    else:
-        if isinstance(figure, type):
-            use = _c_type
-        else:
-            cls = type(figure)
-            if auto:
-                if not isinstance(figure, Op):
-                    _c_type(cls, data)
-            for (use, accept) in _select:
-                if accept(cls):
-                    break
-            else:
-                use = _c_object
+        figure = get(figure)
+        if figure is nil:
+            continue
+        return execute(figure, data)
 
-        use = functools.partial(use, auto = auto, extra = extra)
+    try:
+        use = helpers.select(_group_c, cls)
+    except helpers.SelectError:
+        use = _c_object
 
-    use(figure, data)
+    if auto and not figure is _c_next:
+        _c_type(cls, data)
+
+    return execute(figure, data)
 
 
-def wrap(figure, message, **extra):
+def wrap(figure, *parts, **kwargs):
 
     """
-    Use ``message`` when an error is raised against this ``figure``.
+    Use ``parts`` when an error is raised against this ``figure``.
 
-    ``extra`` gets passed to :func:`.check` automatically.
+    ``kwargs`` gets passed to :func:`.check` automatically.
 
     .. code-block:: py
 
-        figure = wrap(
-            shucks.range(4, math.inf, left = False),
-            'cannot be over 4'
-        )
-
-        data = ...
-
-        check(figure, data)
+        >>> fig = wrap(
+        >>>     shucks.range(4, math.inf, left = False),
+        >>>     'cannot be over 4'
+        >>> )
+        >>> data = ...
+        >>> check(fig, data)
     """
 
     def wrapper(data):
         try:
-            check(figure, data, **extra)
+            value = check(figure, data, **kwargs)
         except Error as error:
-            raise Error(message) from error
+            raise Error(*parts)
+        return value
 
     return wrapper

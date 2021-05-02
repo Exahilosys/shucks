@@ -9,67 +9,43 @@ from . import schema
 __all__ = ('range', 'contain')
 
 
-class range(
-        collections.namedtuple(
-            'range',
-            'lower upper left right',
-            defaults = (True, True)
-        )
-    ):
+def range(a, b = None, left = True, right = True):
 
     """
     Check whether the value is between the lower and upper bounds.
 
-    :param float lower:
-        One of the bounds.
-    :param float upper:
-        One of the bounds.
+    :param float a:
+        Lower or upper bound.
+    :param float b:
+        Upper bound.
     :param bool left:
-        Use left inclusive.
+        Whether lower bound is inclusive.
     :param bool right:
-        use right inclusive.
+        Whether upper bound is inclusive.
 
     .. code-block:: py
 
-        >>> valid = range(5.5, left = False) # (0, 5.5]
-        >>> check(valid, 0) # fail, not included
+        >>> figure = range(5.5, left = False) # (0, 5.5]
+        >>> check(figure, 0) # fail, not included
     """
 
-    __slots__ = ()
+    (min, max) = (0, a) if b is None else (a, b)
 
-    def __new__(cls, arg0 = None, arg1 = None, /, **kwargs):
+    sides = (left, right)
 
-        for (key, value) in cls._field_defaults.items():
-            kwargs.setdefault(key, value)
+    operators = (operator.lt, operator.le)
 
-        min = 0
-        if not arg0 is None:
-            max = arg0
-            if not arg1 is None:
-                (min, max) = (max, arg1)
-        else:
-            max = math.inf
+    (former, latter) = map(operators.__getitem__, sides)
 
-        return super().__new__(cls, min, max, **kwargs)
+    def check(value):
+        return former(min, value) and latter(value, max)
 
-    def __call__(self, value):
+    result = schema.wrap(check, 'range', a, b, left, right)
 
-        sides = (self.left, self.right)
-        operators = (operator.lt, operator.le)
-        (former, latter) = map(operators.__getitem__, sides)
-        if former(self.lower, value) and latter(value, self.upper):
-            return
-
-        raise schema.Error('range', self)
+    return result
 
 
-class contain(
-        collections.namedtuple(
-            'contain',
-            'store white',
-            defaults = (True,)
-        )
-    ):
+def contain(store, white = True):
 
     """
     Check whether the value against the store.
@@ -82,15 +58,13 @@ class contain(
     .. code-block:: py
 
         >>> import string
-        >>> valid = contain(string.ascii_lowercase)
-        >>> check(valid, 'H') # fail, capital
+        >>> figure = contain(string.ascii_lowercase)
+        >>> check(figure, 'H') # fail, capital
     """
 
-    __slots__ = ()
+    def check(value):
+        return value in store is white
 
-    def __call__(self, value):
+    result = schema.wrap(check, 'contain', store, white)
 
-        if (value in self.store) is self.white:
-            return
-
-        raise schema.Error('contain', self)
+    return result

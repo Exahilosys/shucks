@@ -39,3 +39,20 @@ def ellisplit(values):
         inform(value)
 
     yield store
+
+
+class SelectError(Exception):
+
+    __slots__ = ()
+
+
+def select(group, value):
+
+    for (result, accept) in group:
+        if not accept(value):
+            continue
+        break
+    else:
+        raise SelectError()
+
+    return result

@@ -181,18 +181,6 @@ Check if the data is even:
 
   even = lambda data: not data % 2
 
-Check if every line in a file starts with :code:`_`:
-
-.. code-block:: py
-
-  def empty(data):
-    with open(data) as file:
-      lines = file.read().splitlines()
-    for (index, line) in enumerate(lines):
-        if not line.startswith('_'):
-          raise s.Error('lines', index)
-    return True # otherwise, 'call' error
-
 .. note::
 
   Refer to the end of `Errors`_ for info about failing callables.
@@ -303,6 +291,29 @@ ending with a :code:`3`:
 .. code-block:: py
 
   s.And(s.Or(tuple, list), s.Or((), s.Or((s.Or(0, 1), ..., 2, ..., 3), any = True)))
+
+
+.. _file_lines:
+
+Check if every line in a file starts with :code:`_`:
+
+.. code-block:: py
+
+  def read(name):
+    with open(name) as file:
+      data = file.read().splitlines()
+    return data
+
+  s.And(
+    str,
+    s.Con(
+      read,
+      s.wrap(
+        s.Or((lambda line: line.startswith('_'), ...), any = True),
+        'missing _'
+      )
+    )
+  )
 
 Mapping
 -------

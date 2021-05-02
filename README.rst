@@ -8,96 +8,34 @@ Installing
 Simple Usage
 ------------
 
+Validating a login form that accepting email or phone and a password.
+
 .. code-block:: py
 
   import shucks
-  import string
+  import math
 
-  # custom check
-  def title(data):
-    letter = data[0]
-    return letter in string.ascii_uppercase
-
-  # schema
-  human = {
-    'gold': int,
-    'name': shucks.And(
-        str,
-        # convert before checking
+  schema = shucks.And(
+    dict,
+    {
+      'id': shucks.If(
+        shucks.And(str, lambda v: '@' in v),
         shucks.Con(
-          len,
-          # prebuilt checks
-          shucks.range(1, 32),
+          lambda v: v.split('@', 1)[1],
+          shucks.contain({'gmail.com', 'hotmail.com', 'yahoo.com'})
         ),
-        # not converted anymore
-        # callables used with just data
-        title
-    ),
-    'animal': shucks.Or(
-        'dog',
-        'horse',
-        'cat'
-    ),
-    'sick': bool,
-    'items': [
-        {
-            'name': str,
-            'price': float,
-            # optional key
-            # need 3 rgb values
-            shucks.Opt('color'): And(
-              And(
-                int,
-                shucks.range(0, 255)
-              ),
-              shucks.range(3, 3)
-            )
-        },
-        # infinitely check values with last schema
-        ...
-    ]
-  }
-
-  data = {
-    'gold': 100,
-    'name': 'Merida',
-    'animal': 'horse',
-    'sick': False,
-    'items': [
-        {
-            'name': 'Arrow',
-            'price': 2.66,
-            'color': (190, 200, 230)
-        },
-        {
-            'name': 'Bow',
-            # not float
-            'price': 24,
-            'color': (140, 160, 15)
-        }
-    ]
-  }
-
-  try:
-    shucks.check(human, data, auto = True)
-  except shucks.Error as error:
-    # ex: instead of <class 'bool'>, show 'bool'
-    def human(value):
-      if callable(value):
-        value = value.__name__
-      return value
-    print(error.show(alias = human))
-
-The above script will print the following:
-
-.. code-block:: py
-
-  >>> (
-  >>>   ('value', ('items',)), # in the value of the "items" key
-  >>>   ('index', (1,)), # at the 1st index of the array
-  >>>   ('value', ('price',)), # in the value of the "price" key
-  >>>   ('type', ('float', 'int')) # type expected float, got int
-  >>> )
+        shucks.And(
+          shucks.Or(str, int),
+          shucks.Con(str, shucks.Con(len, shucks.range(10, 10)))
+        )
+      ),
+      'password': shucks.And(
+        str,
+        shucks.Con(len, shucks.range(8, math.inf), lambda v: not 'logo' in v)
+      ),
+      shucks.Opt('remember'): bool
+    }
+  )
 
 Links
 -----

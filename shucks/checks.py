@@ -63,7 +63,7 @@ def contain(store, white = True):
     """
 
     def check(value):
-        return value in store is white
+        return (value in store) is white
 
     result = schema.wrap(check, 'contain', store, white)
 

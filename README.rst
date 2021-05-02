@@ -31,11 +31,19 @@ Validating a login form that accepting email or phone and a password.
       ),
       'password': shucks.And(
         str,
-        shucks.Con(len, shucks.range(8, math.inf), lambda v: not 'logo' in v)
+        shucks.Con(len, shucks.And(shucks.range(8, math.inf))),
+        shucks.wrap(lambda v: not 'logo' in v, 'logo')
       ),
       shucks.Opt('remember'): bool
     }
   )
+
+  data = {
+    'id': 1234567890
+    'password': 'logo1234'
+  }
+
+  shucks.check(schema, data)
 
 Links
 -----

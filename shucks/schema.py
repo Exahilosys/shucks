@@ -253,11 +253,11 @@ class Rou:
         >>> check(fig, '0123456789')
     """
 
-    __slots__ = ('predicate', 'success', 'failure')
+    __slots__ = ('figure', 'success', 'failure')
 
-    def __init__(self, predicate, success, failure = nil):
+    def __init__(self, figure, success, failure = nil):
 
-        self.predicate = predicate
+        self.figure = figure
 
         self.success = success
         self.failure = failure
@@ -422,7 +422,7 @@ _group_c = (
 )
 
 
-def _s_con(figure, data):
+def _s_con(figure, data, **extra):
 
     data = figure.change(data)
 
@@ -431,13 +431,16 @@ def _s_con(figure, data):
     return (figure, data)
 
 
-def _s_rou(figure, data):
+def _s_rou(figure, data, **extra):
 
-    result = figure.predicate(data)
+    try:
+        check(figure.figure, data, **extra)
+    except Error:
+        figure = figure.failure
+    else:
+        figure = figure.success
 
-    figure = figure.success if result else figure.failure
-
-    return figure
+    return (figure, data)
 
 
 _group_s = (
@@ -480,11 +483,11 @@ def check(figure, data, auto = False, extra = []):
     cls = type(figure)
 
     try:
-        use = helpers.select(_group_s, cls)
+        sub = helpers.select(_group_s, cls)
     except helpers.SelectError:
         pass
     else:
-        (figure, data) = use(figure, data)
+        (figure, data) = sub(figure, data)
         return execute(figure, data)
 
     if figure is nil:

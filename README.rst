@@ -8,7 +8,7 @@ Installing
 Simple Usage
 ------------
 
-Validating a login form that accepting email or phone and a password.
+Validating a login form accepting email or phone and a password.
 
 .. code-block:: py
 

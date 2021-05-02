@@ -4,7 +4,8 @@ import collections.abc
 from . import helpers
 
 
-__all__ = ('Error', 'Op', 'Nex', 'Or', 'And', 'Sig', 'Opt', 'Con', 'check')
+__all__ = ('Error', 'Op', 'Nex', 'Or', 'And', 'Sig', 'Opt', 'Con', 'check',
+           'wrap')
 
 
 class Error(Exception):
@@ -401,3 +402,31 @@ def check(figure, data, auto = False, extra = []):
         use = functools.partial(use, auto = auto, extra = extra)
 
     use(figure, data)
+
+
+def wrap(figure, message, **extra):
+
+    """
+    Use ``message`` when an error is raised against this ``figure``.
+
+    ``extra`` gets passed to :func:`.check` automatically.
+
+    .. code-block:: py
+
+        figure = wrap(
+            shucks.range(4, math.inf, left = False),
+            'cannot be over 4'
+        )
+
+        data = ...
+
+        check(figure, data)
+    """
+
+    def wrapper(data):
+        try:
+            check(figure, data, **extra)
+        except Error as error:
+            raise Error(message) from error
+
+    return wrapper

@@ -157,7 +157,7 @@ Check further only if :code:`str`:
 
   s.If(str, s.Con(len, s.range(1, 10)))
 
-Check if 10 characters when str, or convert and check if int.
+Check if :code:`10` characters when str, or convert and check otherwise.
 
 .. code-block:: py
 

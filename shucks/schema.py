@@ -29,15 +29,6 @@ class Error(Exception):
         Additional details used.
     :var gen chain:
         Yields all contributing errors.
-
-    .. warning::
-
-        :code:`.code` and :code:`.info` are derived from :code:`.args`.
-
-        Accessing them with no arguments passed upon creation may result in
-        :class:`IndexError`.
-
-        The same happens when trying to :func:`repr` this.
     """
 
     __slots__ = ('_code', '_info')
@@ -82,12 +73,13 @@ class Error(Exception):
              sep = os.linesep):
 
         """
-        show(alias = None)
-
         Get simple json-friendly info about this error family.
 
-        :param func alias:
-            Used on every ``(name, value)``'s value; result used instead.
+        :param func use:
+            Used on every ``(code, info)`` for each back-error and should return
+            :class:`str`.
+        :param str sep:
+            Used to join all parts together.
         """
 
         apply = lambda error: use(error.code, error.info)

@@ -12,9 +12,7 @@ __all__ = ('nil', 'Error', 'Op', 'Nex', 'Or', 'And', 'Opt', 'Con', 'Rou', 'If',
 __marker = object()
 
 
-"""
-Used to signify nonexistance.
-"""
+#: Used to signify nonexistance.
 nil = object()
 
 
@@ -151,9 +149,7 @@ class Nex(Op):
         return super().__new__(cls, *values)
 
 
-"""
-Alias of :class:`Nex`.
-"""
+#: Alias of :class:`Nex`.
 Or = Nex
 
 
@@ -255,9 +251,7 @@ class Rou:
         self.failure = failure
 
 
-"""
-Alias of :class:`.Rou`.
-"""
+#: Alias of :class:`Rou`.
 If = Rou
 
 

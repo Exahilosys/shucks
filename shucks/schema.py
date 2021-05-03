@@ -89,9 +89,7 @@ class Error(Exception):
 
     def __repr__(self):
 
-        info = ', '.join(map(repr, self._info))
-
-        return f'{self._code}: {info}'
+        return self.args[0]
 
     def __str__(self):
 

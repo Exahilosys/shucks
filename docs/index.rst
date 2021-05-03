@@ -430,3 +430,63 @@ such classes.
 
    :code:`extra` accepts a list for adding and removing determinators
    accordingly.
+
+Practices
+=========
+
+There's a few things you can do to make validation more understandable.
+
+For example, when raising :class:`~shucks.Error`, either manually or through
+:func:`~shucks.wrap`, you may want to include some sort of "code" as the first
+argument, and then assets that can be used to form an explanation, rather than
+the explanation itself.
+
+So, having these:
+
+.. coce-block:: py
+
+  primes = {11, 13, 17, 19, 23, 29, 31, 37}
+  length = 3
+  subfig = s.Con(primes.intersection, s.Con(len, 3))
+
+So instead of doing something like this:
+
+.. code-block:: py
+
+  s.wrap(subfig, '3 prime numbers over 10 and under 40 required')
+
+Strive to do something like this isntead:
+
+.. code-block:: py
+
+  s.wrap(subfig, 'primes', primes, length)
+
+When this fails, the user will programatically be able to handle the error and
+make a more educated deduction about what went wrong, and better yet, how to fix
+it.
+
+Another good practice that's already visible is :func:`~shucks.wrap`\ing all
+:class:`~shucks.Con`\'s, so as to better communicate the transformations that
+occurred during validation.
+
+For example, consider the following figure:
+
+.. code-block:: py
+
+  s.And(int, s.Con(str, s.Con(len, s.range(8, 64))))
+
+The ideal data should be an :class:`int`, and the innermost check that happens
+is a  :func:`~shucks.range`. However, that range is for the amount of digits the
+number has, not the number itself.
+
+Not knowing the conversions that took place can lead to a very confusing error
+if this were to be checked against, let's say, :code:`42.` as it's definitely
+between :code:`8` and :code:`64`, but an error is raised saying that it's not.
+
+So a better way of formulating this figure would be:
+
+  s.And(int, s.wrap(s.Con(str, s.Con(len, s.range(8, 64))), 'digit amount'))
+
+Notice how not *both* :class:`~shucks.Con`\s were :func:`~shucks.wrap`\ed, as
+they describe consecutive conversions that cannot easily be described
+ separately.

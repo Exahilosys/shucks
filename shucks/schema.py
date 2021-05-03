@@ -258,7 +258,7 @@ If = Rou
 class Not:
 
     """
-    Represent the ``NOT`` operator.
+    Represents the ``NOT`` operator.
 
     .. code-block:: py
 

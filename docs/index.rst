@@ -455,7 +455,7 @@ So instead of doing something like this:
 
   s.wrap(subfig, '3 prime numbers over 10 and under 40 required')
 
-Strive to do something like this isntead:
+Strive to do something like this:
 
 .. code-block:: py
 
@@ -466,7 +466,7 @@ make a more educated deduction about what went wrong, and better yet, how to fix
 it.
 
 Another good practice that's already visible is :func:`~shucks.schema.wrap`\ing
-all :class:`~shucks.schema.Con`\'s, so as to better communicate the
+all :class:`~shucks.schema.Con`\s, so as to better communicate the
 transformations that occurred during validation.
 
 For example, consider the following figure:

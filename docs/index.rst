@@ -124,6 +124,14 @@ Check if the data is a :class:`str` instance and :code:`'hello'`:
 
   s.And(str, 'hello')
 
+.. _not:
+
+Check if the is **not** :class:`str` and :code:`;`.
+
+.. code-block:: py
+
+  s.Not(s.And(str, 'hello'))
+
 .. _con:
 
 Check if the length of the data is :code:`10`:

@@ -5,8 +5,8 @@ import os
 from . import helpers
 
 
-__all__ = ('nil', 'Error', 'Op', 'Nex', 'Or', 'And', 'Opt', 'Con', 'Rou', 'If',
-           'check', 'wrap')
+__all__ = ('nil', 'Error', 'Op', 'Nex', 'Or', 'And', 'Not', 'Opt', 'Con', 'Rou',
+           'If', 'check', 'wrap')
 
 
 __marker = object()
@@ -255,6 +255,24 @@ class Rou:
 If = Rou
 
 
+class Not:
+
+    """
+    Represent the ``NOT`` operator.
+
+    .. code-block:: py
+
+        fig = Not(And(str, Con(len, lambda v: v > 5)))
+        check(fig, 'pass1234')
+    """
+
+    __slots__ = ('figure',)
+
+    def __init__(self, figure):
+
+        self.figure = figure
+
+
 def _c_nex(figure, data, **extra):
 
     for figure in figure:
@@ -272,6 +290,18 @@ def _c_and(figure, data, **extra):
 
     for figure in figure:
         check(figure, data, **extra)
+
+
+def _c_not(figure, data, **extra):
+
+    figure = figure.figure
+
+    try:
+        check(figure, data, **extra)
+    except Error:
+        return
+
+    raise Error('not', figure, data)
 
 
 def _c_type(figure, data, **extra):
@@ -384,6 +414,12 @@ _group_c = (
         _c_and,
         lambda cls: (
             issubclass(cls, And)
+        )
+    ),
+    (
+        _c_not,
+        lambda cls: (
+            issubclass(cls, Not)
         )
     ),
     (

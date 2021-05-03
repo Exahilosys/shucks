@@ -126,11 +126,20 @@ Check if the data is a :class:`str` instance and :code:`'hello'`:
 
 .. _not:
 
-Check if the is not :class:`str` and :code:`'hello'`.
+Check if the data is not :class:`str` and :code:`'hello'`:
 
 .. code-block:: py
 
   s.Not(s.And(str, 'hello'))
+
+.. _exc:
+
+Check if the data is :class:`str` and casting to :class:`abs` raises
+:class:`TypeError`:
+
+.. code-block:: py
+
+  s.And(str, s.Exc(abs, TypeError))
 
 .. _con:
 

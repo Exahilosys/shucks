@@ -5,8 +5,8 @@ import os
 from . import helpers
 
 
-__all__ = ('nil', 'Error', 'Op', 'Nex', 'Or', 'And', 'Not', 'Opt', 'Con', 'Rou',
-           'If', 'check', 'wrap')
+__all__ = ('nil', 'Error', 'Op', 'Nex', 'Or', 'And', 'Not', 'Exc', 'Opt', 'Con',
+           'Rou', 'If', 'check', 'wrap')
 
 
 __marker = object()
@@ -273,6 +273,24 @@ class Not:
         self.figure = figure
 
 
+class Exc:
+
+    """
+    Pass when exceptions are raised.
+
+    .. code-block:: py
+
+        fig = Exc(int, ValueError)
+    """
+
+    __slots__ = ('figure', 'exceptions')
+
+    def __init__(self, figure, exceptions):
+
+        self.figure = figure
+        self.exceptions = exceptions
+
+
 def _c_nex(figure, data, **extra):
 
     for figure in figure:
@@ -294,14 +312,22 @@ def _c_and(figure, data, **extra):
 
 def _c_not(figure, data, **extra):
 
-    figure = figure.figure
-
     try:
-        check(figure, data, **extra)
+        check(figure.figure, data, **extra)
     except Error:
         return
 
-    raise Error('not', figure, data)
+    raise Error('not', figure.figure, data)
+
+
+def _c_exc(figure, data, **extra):
+
+    try:
+        check(figure.figure, data, **extra)
+    except figure.exceptions:
+        return
+
+    raise Error('except', figure.figure, figure.exceptions, data)
 
 
 def _c_type(figure, data, **extra):
@@ -423,6 +449,12 @@ _group_c = (
         )
     ),
     (
+        _c_exc,
+        lambda cls: (
+            issubclass(cls, Exc)
+        )
+    ),
+    (
         _c_callable,
         lambda cls: (
             issubclass(cls, collections.abc.Callable)
@@ -527,6 +559,7 @@ def check(figure, data, auto = False, extra = []):
         use = _c_object
 
     if auto and not figure is _c_next:
+        print(auto, figure is _c_next)
         _c_type(cls, data)
 
     return execute(figure, data)

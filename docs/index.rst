@@ -126,7 +126,7 @@ Check if the data is a :class:`str` instance and :code:`'hello'`:
 
 .. _not:
 
-Check if the is **not** :class:`str` and :code:`;`.
+Check if the is not :class:`str` and :code:`'hello'`.
 
 .. code-block:: py
 

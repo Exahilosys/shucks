@@ -32,7 +32,7 @@ Validating a login form accepting email or phone and a password.
       'password': shucks.And(
         str,
         shucks.Con(len, shucks.And(shucks.range(8, math.inf))),
-        shucks.wrap(lambda v: not 'logo' in v, 'logo')
+        shucks.wrap(shucks.Not(lambda v: 'logo' in v), 'logo')
       ),
       shucks.Opt('remember'): bool
     }

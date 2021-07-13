@@ -48,7 +48,7 @@ def range(a, b = None, left = True, right = True):
 def contain(store, white = True):
 
     """
-    Check whether the value against the store.
+    Check the membership of the value against the store.
 
     :param collections.abc.Container store:
         The store.

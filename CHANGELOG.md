@@ -1,7 +1,5 @@
 #### Additions
 
-- Added tracing.
-
 #### Changes
 
 #### Removals

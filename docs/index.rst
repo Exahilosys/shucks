@@ -134,7 +134,7 @@ Check if the data is not :class:`str` and :code:`'hello'`:
 
 .. _exc:
 
-Check if the data is :class:`str` and casting to :class:`abs` raises
+Check if the data is :class:`str` and casting to :class:`abs` does not raise
 :class:`TypeError`:
 
 .. code-block:: py

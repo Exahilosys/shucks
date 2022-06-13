@@ -6,7 +6,7 @@ from . import helpers
 
 
 __all__ = ('nil', 'Error', 'Op', 'Nex', 'Or', 'And', 'Not', 'Exc', 'Opt', 'Con',
-           'Rou', 'If', 'check', 'wrap')
+           'Rou', 'If', 'check', 'trace', 'wrap')
 
 
 __marker = object()
@@ -60,7 +60,7 @@ class Error(Exception):
             if self is None:
                 break
 
-    def draw(self, alias = lambda code, info: (code, info)):
+    def draw(self, alias = lambda pair: pair):
 
         data = tuple(map(alias, self._info))
 
@@ -122,6 +122,8 @@ class Nex(Op):
 
     Values will be checked in order. If none pass, the last error is raised.
 
+    First data passing will be used for tracing.
+
     .. code-block:: py
 
         >>> def less(value):
@@ -157,6 +159,8 @@ class And(Op):
     Represents the ``AND`` operator.
 
     Values will be checked in order. If one fails, its error is raised.
+
+    Last data passing will be used for tracing.
 
     .. code-block:: py
 
@@ -202,6 +206,8 @@ class Con:
     """
     Signals a conversion to the data before checking.
 
+    Data will not be used for tracing.
+
     .. code-block:: py
 
         >>> def less(value):
@@ -224,6 +230,8 @@ class Rou:
 
     """
     Routes validation according to a condition.
+
+    Data passing will be used for tracing.
 
     .. code-block:: py
 
@@ -258,6 +266,8 @@ class Not:
     """
     Represents the ``NOT`` operator.
 
+    Data will be used for tracing.
+
     .. code-block:: py
 
         fig = Not(And(str, Con(len, lambda v: v > 5)))
@@ -274,7 +284,9 @@ class Not:
 class Exc:
 
     """
-    Pass when exceptions are raised.
+    Fail when exceptions are raised.
+
+    Data will be used for tracing.
 
     .. code-block:: py
 
@@ -291,9 +303,11 @@ class Exc:
 
 def _c_nex(figure, data, **extra):
 
+    result = __marker
+
     for figure in figure:
         try:
-            check(figure, data, **extra)
+            result = check(figure, data, **extra)
         except Error as _error:
             error = _error
         else:
@@ -301,11 +315,19 @@ def _c_nex(figure, data, **extra):
     else:
         raise error
 
+    return result
+
 
 def _c_and(figure, data, **extra):
 
+    result = __marker
+
     for figure in figure:
-        check(figure, data, **extra)
+        subresult = check(figure, data, **extra)
+        if not subresult is __marker:
+            result = subresult
+
+    return result
 
 
 def _c_not(figure, data, **extra):
@@ -313,7 +335,7 @@ def _c_not(figure, data, **extra):
     try:
         check(figure.figure, data, **extra)
     except Error:
-        return
+        return data
 
     raise Error('not', figure.figure, data)
 
@@ -321,11 +343,11 @@ def _c_not(figure, data, **extra):
 def _c_exc(figure, data, **extra):
 
     try:
-        check(figure.figure, data, **extra)
+        result = check(figure.figure, data, **extra)
     except figure.exceptions:
-        return
+        raise Error('except', figure.figure, figure.exceptions, data)
 
-    raise Error('except', figure.figure, figure.exceptions, data)
+    return result
 
 
 def _c_type(figure, data, **extra):
@@ -333,7 +355,7 @@ def _c_type(figure, data, **extra):
     cls = type(data)
 
     if issubclass(cls, figure):
-        return
+        return data
 
     raise Error('type', figure, cls)
 
@@ -341,7 +363,7 @@ def _c_type(figure, data, **extra):
 def _c_object(figure, data, **extra):
 
     if figure == data:
-        return
+        return data
 
     raise Error('object', figure, data)
 
@@ -355,6 +377,8 @@ def _c_array(figure, data, **extra):
 
     cache = __marker
 
+    result = []
+
     size = 0
 
     for figure in figure_g:
@@ -367,12 +391,14 @@ def _c_array(figure, data, **extra):
         for source in data_g:
             (index, data) = source
             try:
-                check(figure, data, **extra)
+                subresult = check(figure, data, **extra)
             except Error as error:
                 if multi and size < limit:
                     data_g = helpers.prepend(data_g, source)
                     break
                 raise Error('index', index) from error
+            if not subresult is __marker:
+                result.append(subresult)
             if multi:
                 continue
             size += 1
@@ -389,8 +415,12 @@ def _c_array(figure, data, **extra):
     else:
         raise Error('large', limit)
 
+    return result
+
 
 def _c_dict(figure, data, **extra):
+
+    result = {}
 
     for (figure_k, figure_v) in figure.items():
         optional = isinstance(figure_k, Opt)
@@ -403,9 +433,13 @@ def _c_dict(figure, data, **extra):
                 continue
             raise Error('key', figure_k) from None
         try:
-            check(figure_v, data_v, **extra)
+            subresult = check(figure_v, data_v, **extra)
         except Error as error:
             raise Error('value', figure_k) from error
+        if not subresult is __marker:
+            result[figure_k] = subresult
+
+    return result
 
 
 def _c_callable(figure, data, **extra):
@@ -413,12 +447,35 @@ def _c_callable(figure, data, **extra):
     result = figure(data)
 
     if result is True:
-        return
+        return __marker
 
     if result is False:
         raise Error('call', figure, data)
 
-    raise TypeError(f'unexpected callable result {result} from {figure}')
+    return result
+
+
+def _c_con(figure, data, **extra):
+
+    data = figure.change(data)
+
+    figure = figure.figure
+
+    check(figure, data)
+
+    return __marker
+
+
+def _c_rou(figure, data, **extra):
+
+    try:
+        check(figure.figure, data, **extra)
+    except Error:
+        figure = figure.failure
+    else:
+        figure = figure.success
+
+    return check(figure, data, **extra)
 
 
 _group_c = (
@@ -470,40 +527,15 @@ _group_c = (
             issubclass(cls, collections.abc.Iterable)
             and not issubclass(cls, (str, bytes))
         )
-    )
-)
-
-
-def _s_con(figure, data, **extra):
-
-    data = figure.change(data)
-
-    figure = figure.figure
-
-    return (figure, data)
-
-
-def _s_rou(figure, data, **extra):
-
-    try:
-        check(figure.figure, data, **extra)
-    except Error:
-        figure = figure.failure
-    else:
-        figure = figure.success
-
-    return (figure, data)
-
-
-_group_s = (
+    ),
     (
-        _s_con,
+        _c_con,
         lambda cls: (
             issubclass(cls, Con)
         )
     ),
     (
-        _s_rou,
+        _c_rou,
         lambda cls: (
             issubclass(cls, Rou)
         )
@@ -514,7 +546,7 @@ _group_s = (
 def check(figure, data, auto = False, extra = []):
 
     """
-    Validates data against the figure.
+    Validates data against the figure and returns a compliant copy.
 
     :param any figure:
         Some object or class to validate against.
@@ -529,18 +561,9 @@ def check(figure, data, auto = False, extra = []):
     use = check
 
     def execute(*args):
-        use(*args, auto = auto, extra = extra)
-        return True # so _c_callable compliant
+        return use(*args, auto = auto, extra = extra)
 
     cls = type(figure)
-
-    try:
-        sub = helpers.select(_group_s, cls)
-    except helpers.SelectError:
-        pass
-    else:
-        (figure, data) = sub(figure, data)
-        return execute(figure, data)
 
     if figure is nil:
         return
@@ -557,10 +580,13 @@ def check(figure, data, auto = False, extra = []):
         use = _c_object
 
     if auto and not figure is _c_next:
-        print(auto, figure is _c_next)
         _c_type(cls, data)
 
     return execute(figure, data)
+
+
+#: Alias of :class:`check`.
+trace = check
 
 
 def wrap(figure, *parts, **kwargs):
